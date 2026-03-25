@@ -28,10 +28,19 @@ function isDemoMode(): boolean {
 }
 
 function getConfig() {
-  return {
-    host: process.env.INTELLICENTER_HOST || "",
-    port: parseInt(process.env.INTELLICENTER_PORT || "6680"),
-  };
+  try {
+    const { loadSettings } = require("./settings");
+    const settings = loadSettings();
+    return {
+      host: settings.intellicenter.host || "",
+      port: settings.intellicenter.port || 6680,
+    };
+  } catch {
+    return {
+      host: process.env.INTELLICENTER_HOST || "",
+      port: parseInt(process.env.INTELLICENTER_PORT || "6680"),
+    };
+  }
 }
 
 async function getUnit(): Promise<Unit> {

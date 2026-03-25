@@ -1,17 +1,20 @@
 import { WeatherReading } from "./db";
+import { loadSettings, saveSettings } from "./settings";
 
 const WU_BASE = "https://api.weather.com/v2/pws";
 
 export interface WeatherUndergroundConfig {
   apiKey: string;
   stationId: string;
+  lat: number | null;
+  lon: number | null;
 }
 
 function getConfig(): WeatherUndergroundConfig | null {
-  const apiKey = process.env.WUNDERGROUND_API_KEY;
-  const stationId = process.env.WUNDERGROUND_STATION_ID;
+  const settings = loadSettings();
+  const { apiKey, stationId, lat, lon } = settings.weather;
   if (!apiKey || !stationId) return null;
-  return { apiKey, stationId };
+  return { apiKey, stationId, lat, lon };
 }
 
 export function isWeatherConfigured(): boolean {
@@ -19,7 +22,57 @@ export function isWeatherConfigured(): boolean {
 }
 
 export function getStationId(): string {
-  return process.env.WUNDERGROUND_STATION_ID || "";
+  return loadSettings().weather.stationId;
+}
+
+// Look up a station's lat/lon from its current observations
+export async function resolveStationLocation(
+  apiKey: string,
+  stationId: string
+): Promise<{ lat: number; lon: number } | null> {
+  const url = `${WU_BASE}/observations/current?stationId=${stationId}&format=json&units=e&apiKey=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const obs = data.observations?.[0];
+    if (obs?.lat != null && obs?.lon != null) {
+      return { lat: obs.lat, lon: obs.lon };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Validate that an API key + station ID work
+export async function validateWeatherConfig(
+  apiKey: string,
+  stationId: string
+): Promise<{ valid: boolean; stationName?: string; lat?: number; lon?: number; error?: string }> {
+  const url = `${WU_BASE}/observations/current?stationId=${stationId}&format=json&units=e&apiKey=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      if (res.status === 401) return { valid: false, error: "Invalid API key" };
+      if (res.status === 404) return { valid: false, error: "Station not found" };
+      return { valid: false, error: `API error (${res.status})` };
+    }
+    const data = await res.json();
+    const obs = data.observations?.[0];
+    if (!obs) return { valid: false, error: "No data from station" };
+
+    return {
+      valid: true,
+      stationName: obs.neighborhood || stationId,
+      lat: obs.lat,
+      lon: obs.lon,
+    };
+  } catch (err) {
+    return { valid: false, error: "Failed to connect to Weather Underground" };
+  }
 }
 
 interface WUObservation {
@@ -61,24 +114,22 @@ export async function fetchHistoricalWeather(
   }
 }
 
-interface WUForecastDay {
-  fcst_valid: number;
-  temp: number;
-  rh: number;
-  wspd: number;
-  phrase_32char: string;
-}
-
-interface WUForecastResponse {
-  forecasts?: WUForecastDay[];
-}
-
 export async function fetchForecast(): Promise<WeatherReading[]> {
   const config = getConfig();
   if (!config) return [];
 
-  // Use the PWS forecast endpoint (5-day hourly)
-  const url = `https://api.weather.com/v3/wx/forecast/hourly/2day?apiKey=${config.apiKey}&geocode=${process.env.WUNDERGROUND_LAT || "38.29"},${process.env.WUNDERGROUND_LON || "-122.46"}&format=json&units=e`;
+  // Need lat/lon for forecast — auto-resolve if missing
+  let { lat, lon } = config;
+  if (lat == null || lon == null) {
+    const location = await resolveStationLocation(config.apiKey, config.stationId);
+    if (!location) return [];
+    lat = location.lat;
+    lon = location.lon;
+    // Cache the resolved coordinates so we don't look them up every time
+    saveSettings({ weather: { ...config, lat, lon } });
+  }
+
+  const url = `https://api.weather.com/v3/wx/forecast/hourly/2day?apiKey=${config.apiKey}&geocode=${lat},${lon}&format=json&units=e`;
 
   try {
     const res = await fetch(url);

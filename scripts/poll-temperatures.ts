@@ -24,16 +24,30 @@ import path from "path";
 import fs from "fs";
 
 // ── Configuration ──
+// Reads from data/settings.json (same file the app UI writes to), with env var fallbacks
 
-const INTELLICENTER_HOST = process.env.INTELLICENTER_HOST || "";
-const INTELLICENTER_PORT = parseInt(process.env.INTELLICENTER_PORT || "6680");
+function loadSettingsFile(): Record<string, any> {
+  const settingsPath = process.env.SETTINGS_PATH ||
+    path.join(process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : path.join(__dirname, "..", "data"), "settings.json");
+  try {
+    if (fs.existsSync(settingsPath)) {
+      return JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+    }
+  } catch {}
+  return {};
+}
+
+const savedSettings = loadSettingsFile();
+
+const INTELLICENTER_HOST = savedSettings.intellicenter?.host || process.env.INTELLICENTER_HOST || "";
+const INTELLICENTER_PORT = savedSettings.intellicenter?.port || parseInt(process.env.INTELLICENTER_PORT || "6680");
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "..", "data", "pool-history.db");
-const RETENTION_DAYS = parseInt(process.env.RETENTION_DAYS || "90");
+const RETENTION_DAYS = savedSettings.retentionDays || parseInt(process.env.RETENTION_DAYS || "90");
 
-const WU_API_KEY = process.env.WUNDERGROUND_API_KEY || "";
-const WU_STATION_ID = process.env.WUNDERGROUND_STATION_ID || "";
-const WU_LAT = process.env.WUNDERGROUND_LAT || "";
-const WU_LON = process.env.WUNDERGROUND_LON || "";
+const WU_API_KEY = savedSettings.weather?.apiKey || process.env.WUNDERGROUND_API_KEY || "";
+const WU_STATION_ID = savedSettings.weather?.stationId || process.env.WUNDERGROUND_STATION_ID || "";
+const WU_LAT = savedSettings.weather?.lat || process.env.WUNDERGROUND_LAT || "";
+const WU_LON = savedSettings.weather?.lon || process.env.WUNDERGROUND_LON || "";
 
 // ── Database ──
 
