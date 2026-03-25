@@ -56,6 +56,12 @@ function formatTime(timestamp: number, range: string): string {
       minute: "2-digit",
     });
   }
+  if (range === "90d") {
+    return date.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    });
+  }
   return date.toLocaleDateString([], {
     month: "short",
     day: "numeric",
@@ -92,7 +98,15 @@ export default function TemperatureChart({
 }: TemperatureChartProps) {
   const chartData = useMemo(() => {
     // Bucket all data by timestamp (rounded to nearest interval)
-    const bucketMinutes = range === "24h" ? 15 : range === "72h" ? 30 : 60;
+    const bucketMap: Record<string, number> = {
+      "24h": 15,
+      "72h": 30,
+      "week": 60,
+      "2week": 60,
+      "30d": 180,
+      "90d": 360,
+    };
+    const bucketMinutes = bucketMap[range] || 60;
     const bucketSize = bucketMinutes * 60;
     const buckets = new Map<
       number,
@@ -123,7 +137,15 @@ export default function TemperatureChart({
       (a, b) => (a.timestamp as number) - (b.timestamp as number)
     );
 
-    const maxPoints = range === "24h" ? 96 : range === "72h" ? 144 : 336;
+    const maxPointsMap: Record<string, number> = {
+      "24h": 96,
+      "72h": 144,
+      "week": 336,
+      "2week": 336,
+      "30d": 240,
+      "90d": 360,
+    };
+    const maxPoints = maxPointsMap[range] || 336;
     return downsample(sorted, maxPoints);
   }, [temperatures, weather, range]);
 

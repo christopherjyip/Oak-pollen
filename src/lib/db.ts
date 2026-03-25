@@ -193,6 +193,61 @@ export function getLatestWeatherTimestamp(stationId: string): number {
   return row?.latest ?? 0;
 }
 
+// ── Retention / Pruning ──
+
+export function pruneOldReadings(retentionDays: number = 90): number {
+  const db = getDb();
+  const cutoff = Math.floor(Date.now() / 1000) - retentionDays * 24 * 60 * 60;
+
+  const tempResult = db
+    .prepare("DELETE FROM temperature_readings WHERE timestamp < ?")
+    .run(cutoff);
+  const weatherResult = db
+    .prepare("DELETE FROM weather_cache WHERE timestamp < ? AND is_forecast = 0")
+    .run(cutoff);
+
+  return tempResult.changes + weatherResult.changes;
+}
+
+export function getDatabaseStats(): {
+  temperatureCount: number;
+  weatherCount: number;
+  oldestTimestamp: number | null;
+  newestTimestamp: number | null;
+  dbSizeBytes: number;
+} {
+  const db = getDb();
+  const fs = require("fs");
+
+  const tempCount = db
+    .prepare("SELECT COUNT(*) as count FROM temperature_readings")
+    .get() as { count: number };
+  const weatherCount = db
+    .prepare("SELECT COUNT(*) as count FROM weather_cache")
+    .get() as { count: number };
+  const oldest = db
+    .prepare("SELECT MIN(timestamp) as ts FROM temperature_readings")
+    .get() as { ts: number | null };
+  const newest = db
+    .prepare("SELECT MAX(timestamp) as ts FROM temperature_readings")
+    .get() as { ts: number | null };
+
+  const dbPath =
+    process.env.DB_PATH || path.join(process.cwd(), "data", "pool-history.db");
+  let dbSizeBytes = 0;
+  try {
+    dbSizeBytes = fs.statSync(dbPath).size;
+  } catch {}
+
+  return {
+    temperatureCount: tempCount.count,
+    weatherCount: weatherCount.count,
+    oldestTimestamp: oldest.ts,
+    newestTimestamp: newest.ts,
+    dbSizeBytes,
+  };
+}
+
 // ── Demo Data Generation ──
 
 export function generateDemoHistory(): {

@@ -20,21 +20,15 @@ export async function GET(request: NextRequest) {
     const now = Math.floor(Date.now() / 1000);
     let fromTimestamp: number;
 
-    switch (range) {
-      case "72h":
-        fromTimestamp = now - 72 * 60 * 60;
-        break;
-      case "week":
-        fromTimestamp = now - 7 * 24 * 60 * 60;
-        break;
-      case "2week":
-        fromTimestamp = now - 14 * 24 * 60 * 60;
-        break;
-      case "24h":
-      default:
-        fromTimestamp = now - 24 * 60 * 60;
-        break;
-    }
+    const rangeMap: Record<string, number> = {
+      "24h": 24 * 60 * 60,
+      "72h": 72 * 60 * 60,
+      "week": 7 * 24 * 60 * 60,
+      "2week": 14 * 24 * 60 * 60,
+      "30d": 30 * 24 * 60 * 60,
+      "90d": 90 * 24 * 60 * 60,
+    };
+    fromTimestamp = now - (rangeMap[range] || rangeMap["24h"]);
 
     if (isDemoMode()) {
       const demo = generateDemoHistory();

@@ -36,6 +36,8 @@ const RANGES = [
   { key: "72h", label: "3D" },
   { key: "week", label: "1W" },
   { key: "2week", label: "2W" },
+  { key: "30d", label: "1M" },
+  { key: "90d", label: "3M" },
 ];
 
 const SERIES = [
