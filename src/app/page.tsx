@@ -45,7 +45,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Pool</h1>
           <div className="flex items-center gap-2 mt-1">
-            <AirTempBadge temperature={temperatures} />
+            <AirTempBadge airTemp={temperatures.airTemp} units={temperatures.units} />
             {status.freezeMode && (
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
                 Freeze Protect
@@ -54,53 +54,38 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex gap-2">
-          {status.isPoolActive && (
-            <span className="text-xs bg-pool-100 text-pool-700 px-2 py-1 rounded-full font-medium">
-              Pool Active
-            </span>
-          )}
-          {status.isSpaActive && (
-            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
-              Spa Active
-            </span>
+          {temperatures.bodies.map((body) =>
+            body.state ? (
+              <span
+                key={body.id}
+                className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  body.subtype === "SPA"
+                    ? "bg-orange-100 text-orange-700"
+                    : "bg-pool-100 text-pool-700"
+                }`}
+              >
+                {body.name} Active
+              </span>
+            ) : null
           )}
         </div>
       </div>
 
       {/* Temperature Cards */}
       <div className="grid grid-cols-1 gap-3 mb-6">
-        <TemperatureCard
-          label="Pool"
-          currentTemp={temperatures.poolTemp}
-          setPoint={temperatures.poolSetPoint}
-          heatMode={temperatures.poolHeatMode}
-          heatStatus={temperatures.poolHeatStatus}
-          units={temperatures.units}
-          isActive={status.isPoolActive}
-          bodyId={0}
-          onSetPointChange={(bodyId, setPoint) =>
-            updateTemperature(bodyId, { setPoint })
-          }
-          onHeatModeChange={(bodyId, heatMode) =>
-            updateTemperature(bodyId, { heatMode })
-          }
-        />
-        <TemperatureCard
-          label="Spa"
-          currentTemp={temperatures.spaTemp}
-          setPoint={temperatures.spaSetPoint}
-          heatMode={temperatures.spaHeatMode}
-          heatStatus={temperatures.spaHeatStatus}
-          units={temperatures.units}
-          isActive={status.isSpaActive}
-          bodyId={1}
-          onSetPointChange={(bodyId, setPoint) =>
-            updateTemperature(bodyId, { setPoint })
-          }
-          onHeatModeChange={(bodyId, heatMode) =>
-            updateTemperature(bodyId, { heatMode })
-          }
-        />
+        {temperatures.bodies.map((body) => (
+          <TemperatureCard
+            key={body.id}
+            body={body}
+            units={temperatures.units}
+            onSetPointChange={(bodyId, setPoint) =>
+              updateTemperature(bodyId, { setPoint })
+            }
+            onHeatModeChange={(bodyId, heatMode) =>
+              updateTemperature(bodyId, { heatMode })
+            }
+          />
+        ))}
       </div>
 
       {/* Quick Circuit Controls */}

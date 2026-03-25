@@ -1,27 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setHeatMode, setSetPoint } from "@/lib/screenlogic";
-import { HeatMode } from "@/lib/types";
+import { setHeatMode, setSetPoint } from "@/lib/intellicenter";
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { bodyId, heatMode, setPoint } = body;
 
-    if (typeof bodyId !== "number" || (bodyId !== 0 && bodyId !== 1)) {
+    if (typeof bodyId !== "string") {
       return NextResponse.json(
-        { error: "bodyId must be 0 (pool) or 1 (spa)" },
+        { error: "bodyId (string, e.g. 'B1101') is required" },
         { status: 400 }
       );
     }
 
     if (heatMode !== undefined) {
-      if (![0, 1, 2, 3].includes(heatMode)) {
-        return NextResponse.json(
-          { error: "heatMode must be 0 (off), 1 (solar), 2 (solar preferred), or 3 (heater)" },
-          { status: 400 }
-        );
-      }
-      await setHeatMode(bodyId, heatMode as HeatMode);
+      await setHeatMode(bodyId, String(heatMode));
     }
 
     if (setPoint !== undefined) {

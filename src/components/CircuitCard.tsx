@@ -4,7 +4,7 @@ import { PoolCircuit } from "@/lib/types";
 
 interface CircuitCardProps {
   circuit: PoolCircuit;
-  onToggle: (circuitId: number, state: boolean) => void;
+  onToggle: (circuitId: string, state: boolean) => void;
 }
 
 const CIRCUIT_ICONS: Record<string, string> = {
@@ -31,8 +31,8 @@ export default function CircuitCard({ circuit, onToggle }: CircuitCardProps) {
           : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
       }`}
     >
-      {circuit.delay && (
-        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-yellow-400" />
+      {circuit.freeze && (
+        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-400" title="Freeze protect" />
       )}
       <svg
         className="w-8 h-8 mb-2"

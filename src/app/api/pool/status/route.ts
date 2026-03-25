@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPoolStatus } from "@/lib/screenlogic";
+import { getPoolStatus } from "@/lib/intellicenter";
 
 export async function GET() {
   try {

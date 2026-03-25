@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { PoolStatus, ScheduleEvent } from "@/lib/types";
 
-const POLL_INTERVAL = 10000; // 10 seconds
+const POLL_INTERVAL = 10000;
 
 export function usePoolStatus() {
   const [status, setStatus] = useState<PoolStatus | null>(null);
@@ -30,7 +30,7 @@ export function usePoolStatus() {
     return () => clearInterval(interval);
   }, [fetchStatus]);
 
-  const toggleCircuit = async (circuitId: number, state: boolean) => {
+  const toggleCircuit = async (circuitId: string, state: boolean) => {
     try {
       const res = await fetch("/api/pool/circuits", {
         method: "PUT",
@@ -50,13 +50,13 @@ export function usePoolStatus() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
-      fetchStatus(); // Revert on error
+      fetchStatus();
     }
   };
 
   const updateTemperature = async (
-    bodyId: number,
-    updates: { heatMode?: number; setPoint?: number }
+    bodyId: string,
+    updates: { heatMode?: string; setPoint?: number }
   ) => {
     try {
       const res = await fetch("/api/pool/temperature", {

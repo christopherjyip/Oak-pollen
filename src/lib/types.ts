@@ -1,38 +1,29 @@
 export interface PoolCircuit {
-  id: number;
+  id: string;
   name: string;
   state: boolean;
-  colorSet: number;
-  colorPos: number;
-  delay: boolean;
+  type: string;
+  subtype: string;
+  freeze: boolean;
+}
+
+export interface PoolBody {
+  id: string;
+  name: string;
+  state: boolean;
+  subtype: "POOL" | "SPA";
+  currentTemp: number;
+  lastTemp: number;
+  lowSetPoint: number;
+  highSetPoint: number;
+  heatMode: string;
 }
 
 export interface PoolTemperature {
   airTemp: number;
-  poolTemp: number;
-  spaTemp: number;
-  poolSetPoint: number;
-  spaSetPoint: number;
-  poolHeatMode: HeatMode;
-  spaHeatMode: HeatMode;
-  poolHeatStatus: boolean;
-  spaHeatStatus: boolean;
+  bodies: PoolBody[];
   units: "F" | "C";
 }
-
-export enum HeatMode {
-  OFF = 0,
-  SOLAR = 1,
-  SOLAR_PREFERRED = 2,
-  HEAT_PUMP = 3,
-}
-
-export const HEAT_MODE_LABELS: Record<HeatMode, string> = {
-  [HeatMode.OFF]: "Off",
-  [HeatMode.SOLAR]: "Solar Only",
-  [HeatMode.SOLAR_PREFERRED]: "Solar Preferred",
-  [HeatMode.HEAT_PUMP]: "Heater",
-};
 
 export interface ChemistryData {
   pH: number;
@@ -50,20 +41,19 @@ export interface ChemistryData {
 }
 
 export interface ScheduleEvent {
-  id: number;
-  circuitId: number;
+  id: string;
+  circuitId: string;
   circuitName: string;
   startTime: string;
   stopTime: string;
-  dayMask: number;
-  flags: number;
-  heatCmd: number;
+  days: string;
   heatSetPoint: number;
   isRunOnce: boolean;
+  status: string;
 }
 
 export interface PumpStatus {
-  id: number;
+  id: string;
   name: string;
   isRunning: boolean;
   watts: number;
@@ -72,21 +62,21 @@ export interface PumpStatus {
   pumpType: string;
 }
 
+export interface HeaterStatus {
+  id: string;
+  name: string;
+  state: string;
+  body: string;
+}
+
 export interface PoolStatus {
   temperatures: PoolTemperature;
   circuits: PoolCircuit[];
   chemistry: ChemistryData | null;
   pumps: PumpStatus[];
+  heaters: HeaterStatus[];
   freezeMode: boolean;
-  isPoolActive: boolean;
-  isSpaActive: boolean;
 }
-
-// Well-known circuit IDs
-export const CIRCUIT_IDS = {
-  SPA: 500,
-  POOL: 505,
-} as const;
 
 export const DAYS_OF_WEEK = [
   "Sun",
@@ -97,3 +87,11 @@ export const DAYS_OF_WEEK = [
   "Fri",
   "Sat",
 ] as const;
+
+export const HEAT_MODE_LABELS: Record<string, string> = {
+  "0": "Off",
+  "1": "Heater",
+  "2": "Solar Preferred",
+  "3": "Solar Only",
+  "4": "Ultra Temp",
+};

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setCircuitState } from "@/lib/screenlogic";
+import { setCircuitState } from "@/lib/intellicenter";
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { circuitId, state } = body;
 
-    if (typeof circuitId !== "number" || typeof state !== "boolean") {
+    if (typeof circuitId !== "string" || typeof state !== "boolean") {
       return NextResponse.json(
-        { error: "circuitId (number) and state (boolean) are required" },
+        { error: "circuitId (string) and state (boolean) are required" },
         { status: 400 }
       );
     }

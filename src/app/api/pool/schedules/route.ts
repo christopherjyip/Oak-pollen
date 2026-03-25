@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSchedules } from "@/lib/screenlogic";
+import { getSchedules } from "@/lib/intellicenter";
 
 export async function GET() {
   try {
